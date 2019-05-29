@@ -3,7 +3,9 @@ package jhonatanlopes.starwarsplanets.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -13,7 +15,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +51,12 @@ public class PlanetasControllerTest {
 	private RestTemplate restTemplate;
 
 	private Planeta planeta = new Planeta("554312", "Tatooine", "árido", "deserto", 5);
+	private String planetaJson;
+
+	@Before
+	public void setup() throws Exception {
+		this.planetaJson = new ObjectMapper().writeValueAsString(this.planeta);
+	}
 
 	@Test
 	public void planetasDeveRetornarUmaListaDePlanetas() throws Exception {
@@ -61,6 +71,39 @@ public class PlanetasControllerTest {
 	}
 
 	@Test
+	public void buscaPlanetaPeloIdDeveRetornarPlanetaQuandoRecebeIdValido() throws Exception {
+		String planetaId = this.planeta.getId();
+
+		when(this.repository.findById(planetaId))
+				.thenReturn(Optional.of(this.planeta));
+
+		this.mockMvc.perform(get("/planetas/" + planetaId))
+				.andExpect(status().isOk())
+				.andExpect(content().json(this.planetaJson));
+	}
+
+	@Test
+	public void buscaPlanetaPeloIdDeveRetornar404QuandoRecebeIdInvalido() throws Exception {
+		when(this.repository.findById(this.planeta.getId()))
+				.thenReturn(Optional.of(this.planeta));
+
+		this.mockMvc.perform(get("/planetas/56434"))
+				.andExpect(status().isNotFound());
+	}
+
+	@Test
+	public void buscaPlanetaPeloNomeDeveRetornarPlanetaQuandoRecebeNomeValido() throws Exception {
+		String planetaNome = this.planeta.getNome();
+
+		when(this.repository.findByNome(planetaNome))
+				.thenReturn(Optional.of(this.planeta));
+
+		this.mockMvc.perform(get("/planetas/busca?nome=" + planetaNome))
+				.andExpect(status().isOk())
+				.andExpect(content().json(this.planetaJson));
+	}
+
+	@Test
 	public void adicionaPlanetaDeveAdicionarPlanetaNoBanco() throws Exception {
 		ClassLoader loader = Thread.currentThread().getContextClassLoader();
 		InputStream is = loader.getResourceAsStream("swapi-planet.json");
@@ -71,13 +114,22 @@ public class PlanetasControllerTest {
 
 		when(repository.save(any(Planeta.class))).thenReturn(this.planeta);
 
-		String jsonStr = new ObjectMapper().writeValueAsString(this.planeta);
 		this.mockMvc.perform(post("/planetas")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"nome\":\"Tatooine\",\"clima\":\"árido\",\"terreno\":\"deserto\"}"))
 				.andDo(print())
 				.andExpect(status().isOk())
-				.andExpect(content().json(jsonStr));
+				.andExpect(content().json(this.planetaJson));
+	}
+
+	@Test
+	public void removePlanetaDeveRemoverPlanetaRequisitado() throws Exception {
+		String planetaId = this.planeta.getId();
+
+		this.mockMvc.perform(delete("/planetas/" + planetaId))
+				.andExpect(status().isOk());
+
+		verify(this.repository).deleteById(planetaId);
 	}
 
 }

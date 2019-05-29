@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -37,8 +38,16 @@ public class PlanetasController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<Planeta> buscaPlaneta(@PathVariable String id) {
+	public ResponseEntity<Planeta> buscaPlanetaPeloId(@PathVariable String id) {
 		Optional<Planeta> resultado = repository.findById(id);
+
+		return resultado.map(planeta -> ResponseEntity.ok(planeta))
+				.orElse(ResponseEntity.notFound().build());
+	}
+
+	@GetMapping("/busca")
+	public ResponseEntity<Planeta> buscaPlanetaPeloNome(@Param("nome") String nome) {
+		Optional<Planeta> resultado = repository.findByNome(nome);
 
 		return resultado.map(planeta -> ResponseEntity.ok(planeta))
 				.orElse(ResponseEntity.notFound().build());
@@ -62,6 +71,10 @@ public class PlanetasController {
 
 		JsonNode json = restTemplate.exchange(urlDaBusca, HttpMethod.GET,
 				httpEntity, JsonNode.class).getBody();
+
+		if (json.get("results").size() < 0) {
+			return 0;
+		}
 
 		return json.get("results").get(0).get("films").size();
 	}
