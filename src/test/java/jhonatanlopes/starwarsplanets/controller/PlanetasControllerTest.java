@@ -98,7 +98,7 @@ public class PlanetasControllerTest {
 		when(this.repository.findByNome(planetaNome))
 				.thenReturn(Optional.of(this.planeta));
 
-		this.mockMvc.perform(get("/planetas/busca?nome=" + planetaNome))
+		this.mockMvc.perform(get("/planetas?nome=" + planetaNome))
 				.andExpect(status().isOk())
 				.andExpect(content().json(this.planetaJson));
 	}

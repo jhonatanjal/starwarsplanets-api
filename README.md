@@ -65,7 +65,7 @@ Star wars planets API é um aplicação que recebe dados de planetas de star war
 
 **Request:**
 
-> GET /planetas/busca?nome=Tatooine
+> GET /planetas?nome=Tatooine
 
 **Response:**
 
