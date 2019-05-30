@@ -112,13 +112,15 @@ public class PlanetasControllerTest {
 		when(this.restTemplate.exchange(anyString(), eq(HttpMethod.GET),
 				any(HttpEntity.class), eq(JsonNode.class))).thenReturn(ResponseEntity.ok(jsonNode));
 
-		when(repository.save(any(Planeta.class))).thenReturn(this.planeta);
+		when(repository.save(new Planeta(null, "Tatooine", "árido", "deserto", 5)))
+				.thenReturn(this.planeta);
 
+		String jsonRequest = "{\"nome\":\"Tatooine\",\"clima\":\"árido\",\"terreno\":\"deserto\"}";
 		this.mockMvc.perform(post("/planetas")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"nome\":\"Tatooine\",\"clima\":\"árido\",\"terreno\":\"deserto\"}"))
+				.content(jsonRequest))
 				.andDo(print())
-				.andExpect(status().isOk())
+				.andExpect(status().isCreated())
 				.andExpect(content().json(this.planetaJson));
 	}
 

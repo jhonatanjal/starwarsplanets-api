@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
@@ -31,6 +33,9 @@ public class PlanetasController {
 
 	@Autowired
 	private PlanetaRepository repository;
+
+	@Autowired
+	private RestTemplate restTemplate;
 
 	@GetMapping
 	public List<Planeta> planetas() {
@@ -54,13 +59,14 @@ public class PlanetasController {
 	}
 
 	@PostMapping
-	public Planeta adicionaPlaneta(RestTemplate restTemplate, @RequestBody Planeta planeta) {
-		int aparicoesEmFilmes = buscaQtdDeAparicoesEmFilmes(restTemplate, planeta.getNome());
+	@ResponseStatus(HttpStatus.CREATED)
+	public Planeta adicionaPlaneta(@RequestBody Planeta planeta) {
+		int aparicoesEmFilmes = buscaQtdDeAparicoesEmFilmes(planeta.getNome());
 		planeta.setAparicoesEmFilmes(aparicoesEmFilmes);
 		return repository.save(planeta);
 	}
 
-	private int buscaQtdDeAparicoesEmFilmes(RestTemplate restTemplate, String planeta) {
+	private int buscaQtdDeAparicoesEmFilmes(String planeta) {
 		String userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36";
 		String urlDaBusca = "https://swapi.co/api/planets/?search=" + planeta;
 
@@ -69,10 +75,10 @@ public class PlanetasController {
 		headers.add("User-Agent", userAgent);
 		HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
 
-		JsonNode json = restTemplate.exchange(urlDaBusca, HttpMethod.GET,
+		JsonNode json = this.restTemplate.exchange(urlDaBusca, HttpMethod.GET,
 				httpEntity, JsonNode.class).getBody();
 
-		if (json.get("results").size() < 0) {
+		if (json.get("results").size() == 0) {
 			return 0;
 		}
 
